@@ -99,86 +99,87 @@ let custom_dialog = new Dialog({
         $("#rations_minus_button").on("click", (e) => {
             if (e.shiftKey) {purchase_rations -= 10;} else {purchase_rations -= 1;}
             purchase_rations = purchase_rations < 0 ? 0 : purchase_rations;
-            custom_dialog.render();
+            
+            // These two lines do the same thing. Bottom one is using jquery
+            // Some folks dislike jquery, I don't know enough about it to make a decision...
+            html[0].querySelector("#purchase_rations").value = purchase_rations;
+            //$("#purchase_rations").val(purchase_rations);
+            
+            update_computed_fields();
         });
         $("#rations_add_button").on("click", (e) => {
             if (e.shiftKey) {purchase_rations += 10;} else {purchase_rations += 1;}
-            custom_dialog.render();
+            $("#purchase_rations").val(purchase_rations);
+            update_computed_fields();
         });
+        
         $("#feed_minus_button").on("click", (e) => {
             if (e.shiftKey) {purchase_feed -= 10;} else {purchase_feed -= 1;}
             purchase_feed = purchase_feed < 0 ? 0 : purchase_feed;
-            custom_dialog.render();
+            $("#purchase_feed").val(purchase_feed);
+            update_computed_fields();
         });
         $("#feed_add_button").on("click", (e) => {
             if (e.shiftKey) {purchase_feed += 10;} else {purchase_feed += 1;}
-            custom_dialog.render();
+            $("#purchase_feed").val(purchase_feed);
+            update_computed_fields();
         });
+        
         $("#water_minus_button").on("click", (e) => {
             if (e.shiftKey) {purchase_water -= 10;} else {purchase_water -= 1;}
             purchase_water = purchase_water < 0 ? 0 : purchase_water;
-            custom_dialog.render();
+            $("#purchase_water").val(purchase_water);
+            update_computed_fields();
         });
         $("#water_add_button").on("click", (e) => {
             if (e.shiftKey) {purchase_water += 10;} else {purchase_water += 1;}
-            custom_dialog.render();
+            $("#purchase_water").val(purchase_water);
+            update_computed_fields();
         });
+        
         $("#purchase_rations").on("change", (e) => {
             purchase_rations = parseFloat(e.target.value);
             purchase_rations = purchase_rations < 0 ? 0 : purchase_rations;
             purchase_rations = Math.floor(purchase_rations);
-            custom_dialog.render();
+            $("#purchase_rations").val(purchase_rations);
+            update_computed_fields();
         });
         $("#purchase_feed").on("change", (e) => {
             purchase_feed = parseFloat(e.target.value);
             purchase_feed = purchase_feed < 0 ? 0 : purchase_feed;
             purchase_feed = Math.floor(purchase_feed);
-            custom_dialog.render();
+            $("#purchase_feed").val(purchase_feed);
+            update_computed_fields();
         });
         $("#purchase_water").on("change", (e) => {
             purchase_water = parseFloat(e.target.value);
             purchase_water = purchase_water < 0 ? 0 : purchase_water;
             purchase_water = Math.floor(purchase_water);
-            custom_dialog.render();
+            $("#purchase_water").val(purchase_water);
+            update_computed_fields();
         });
+        
         $("#rations_cost").on("change", (e) => {
             price_rations = parseFloat(e.target.value);
             price_rations = price_rations < 0 ? 0 : price_rations;
             price_rations = +(price_rations).toFixed(1);
-            custom_dialog.render();
+            $("#rations_cost").val(price_rations);
+            update_computed_fields();
         });
         $("#feed_cost").on("change", (e) => {
             price_feed = parseFloat(e.target.value);
             price_feed = price_feed < 0 ? 0 : price_feed;
             price_feed = +(price_feed).toFixed(1);
-            custom_dialog.render();
+            $("#feed_cost").val(price_feed);
+            update_computed_fields();
         });
         $("#water_cost").on("change", (e) => {
             price_water = parseFloat(e.target.value);
             price_water = price_water < 0 ? 0 : price_water;
             price_water = +(price_water).toFixed(1);
-            custom_dialog.render();
+            $("#water_cost").val(price_water);
+            update_computed_fields();
         });
-        
-        $("#purchase_rations").val(purchase_rations);
-        $("#purchase_feed").val(purchase_feed);
-        $("#purchase_water").val(purchase_water);
-        $("#rations_cost").val(price_rations);
-        $("#feed_cost").val(price_feed);
-        $("#water_cost").val(price_water);
-        
-        calc_encumbrance = parseFloat(stowed_encumbrance.value) + 
-            purchase_rations*rations.data.data.weight + 
-            purchase_feed*animal_feed.data.data.weight + 
-            purchase_water*water.data.data.weight;
-        calc_encumbrance = +(calc_encumbrance).toFixed(2);
-       
-        calc_cost = purchase_rations*price_rations + purchase_feed*price_feed + purchase_water*price_water;
-        calc_cost = +(calc_cost).toFixed(2);
-        
-        // These are <span> elements so need to update text, not value
-        $("#calc_encumbrance").text(calc_encumbrance);
-        $("#calc_cost").text(calc_cost);
     }, 
     
     close: async (html) => {
@@ -262,5 +263,20 @@ let custom_dialog = new Dialog({
         });
     },
 });
+
+let update_computed_fields = () => {
+    calc_encumbrance = parseFloat(stowed_encumbrance.value) + 
+        purchase_rations*rations.data.data.weight + 
+        purchase_feed*animal_feed.data.data.weight + 
+        purchase_water*water.data.data.weight;
+    calc_encumbrance = +(calc_encumbrance).toFixed(2);
+   
+    calc_cost = purchase_rations*price_rations + purchase_feed*price_feed + purchase_water*price_water;
+    calc_cost = +(calc_cost).toFixed(2);
+    
+    // These are <span> elements so need to update text, not value
+    $("#calc_encumbrance").text(calc_encumbrance);
+    $("#calc_cost").text(calc_cost);
+};
 
 custom_dialog.render(force = true, options = {width: 550});
