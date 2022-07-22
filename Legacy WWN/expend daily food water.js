@@ -94,7 +94,7 @@ let custom_dialog = new Dialog({
         let old_water_quantity = water.data.data.quantity;
         let new_rations_quantity = old_rations_quantity - est_rations;
         let new_feed_quantity = old_feed_quantity - est_feed;
-        let new_water_quantity = old_water_quantity - (est_water_hot * water_multiplier);
+        let new_water_quantity = old_water_quantity - (est_water * water_multiplier);
         
         let insufficient_rations = "";
         let rations_output = new_rations_quantity;
