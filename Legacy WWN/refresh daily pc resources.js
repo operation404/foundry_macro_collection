@@ -46,7 +46,7 @@ pc_arts.forEach(pc_arts => pc_arts.update({ "data.effort": 0 }));
 
 let spells_arts_part = "";
 if (pc_arts.length > 0) {
-    if (pc_actor.data.data.spells.perDay.max !== 0) {
+    if (pc_actor.data.data.spells.perDay.max > 0) {
         spells_arts_part = "<br><span>Spells and Effort reset.</span>";
     } else {
         spells_arts_part = "<br><span>Effort reset.</span>";
