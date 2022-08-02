@@ -28,7 +28,8 @@ let custom_dialog = new Dialog({
         <form>
             <div class="form-group" style="flex-direction: row;">
                 <div></div>
-                <label style="white-space: nowrap; flex-grow: 0; padding-right: 10px;"><b>Money: ${+(Math.max(currency.total - treasure, 0)).toFixed(1)} (${currency.cp}cp ${currency.sp}sp ${currency.gp}gp)</b></label>
+                <label style="white-space: nowrap; flex-grow: 0;">Party fund: <b>${+(Math.max(currency.total - treasure, 0)).toFixed(1)}</b> (${currency.cp}cp ${currency.sp}sp ${currency.gp}gp)</label>
+                <div></div>
                 <label style="white-space: nowrap; flex-grow: 0; padding-right: 10px;"><b>Rations: ${rations.data.data.quantity}</b></label>
                 <label style="white-space: nowrap; flex-grow: 0; padding-right: 10px;"><b>Animal feed: ${animal_feed.data.data.quantity}</b></label>
                 <label style="white-space: nowrap; flex-grow: 0;"><b>Water: ${water.data.data.quantity}</b></label>
