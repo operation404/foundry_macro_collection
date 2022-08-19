@@ -1,14 +1,12 @@
 const party_actor = game.actors.get("UjwAEFk2K9bC9nJu"); // Party actor id
-let pc_actors = [];
-pc_actors.push(game.actors.find(actor => actor.data.name === "Rosaria Synn"));
-pc_actors.push(game.actors.find(actor => actor.data.name === "Kazem Sahaba"));
-pc_actors.push(game.actors.find(actor => actor.data.name === "Aldin Conger"));
-pc_actors.push(game.actors.find(actor => actor.data.name === "Shelley"));
-pc_actors.push(game.actors.find(actor => actor.data.name === "Siwa Chekov"));
-console.log(pc_actors);
+let pc_actor_names = [];
+pc_actor_names.push("Rosaria Synn");
+pc_actor_names.push("Kazem Sahaba");
+pc_actor_names.push("Aldin Conger");
+pc_actor_names.push("Shelley");
+pc_actor_names.push("Siwa Chekov");
 
 let button_hit = false;
-
 let custom_dialog = new Dialog({
     title:`Add Money to Players`,
     content: `
@@ -51,14 +49,33 @@ let custom_dialog = new Dialog({
         silver = silver > 0 ? silver : 0;
         gold = gold > 0 ? gold : 0;
 
-        pc_actors.forEach((actor) => {
-            let pc_currency = actor.data.data.currency;
-            actor.update({
-                "data.currency.cp": pc_currency.cp + copper,
-                "data.currency.sp": pc_currency.sp + silver,
-                "data.currency.gp": pc_currency.gp + gold,
+        try {
+            await Boneyard.executeAsGM_wrapper((args)=>{
+                let actors = [];
+                args.names.forEach(name => {
+                    let actor = game.actors.find(actor => actor.data.name === name);
+                    if (actor !== undefined) actors.push(actor);
+                });
+                actors.forEach(actor => {
+                    let currency = actor.data.data.currency;
+                    actor.update({
+                        "data.currency.cp": currency.cp + args.copper,
+                        "data.currency.sp": currency.sp + args.silver,
+                        "data.currency.gp": currency.gp + args.gold,
+                    });
+                });
+            }, { 
+                names: pc_actor_names, 
+                copper: copper, 
+                silver: silver, 
+                gold: gold 
             });
-        });
+        } catch(e) {
+            //console.error(e);
+            console.log("Error: Can't run 'Add Money to Players' macro, no GM client available.");
+            ui.notifications.error("Error: Can't run 'Add Money to Players' macro, no GM client available.");
+            return;
+        }
         
         let current_day = SimpleCalendar.api.getCurrentDay().numericRepresentation;
         current_day = current_day == 1 ? ""+current_day+"st"
