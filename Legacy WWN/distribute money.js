@@ -1,11 +1,12 @@
 const party_actor = game.actors.get("UjwAEFk2K9bC9nJu"); // Party actor id
-let pc_actors = [];
-pc_actors.push(game.actors.find(actor => actor.data.name === "Rosaria Synn"));
-pc_actors.push(game.actors.find(actor => actor.data.name === "Kazem Sahaba"));
-pc_actors.push(game.actors.find(actor => actor.data.name === "Aldin Conger"));
-pc_actors.push(game.actors.find(actor => actor.data.name === "Shelley"));
-pc_actors.push(game.actors.find(actor => actor.data.name === "Siwa Chekov"));
-console.log(pc_actors);
+const party_actor_id = "UjwAEFk2K9bC9nJu";
+const pc_actor_names = [
+    "Rosaria Synn",
+    "Kazem Sahaba",
+    "Aldin Conger",
+    "Shelley",
+    "Siwa Chekov"
+];
 
 let currency = party_actor.data.data.currency;
 let treasure = party_actor.data.data.treasure;
@@ -14,6 +15,7 @@ let button_hit = false;
 
 let custom_dialog = new Dialog({
     title:`Distribute Money`,
+    
     content: `
         <form>
             <div class="form-group" style="flex-direction: row;">
@@ -40,6 +42,7 @@ let custom_dialog = new Dialog({
             <hr>
         </form>
     `,
+    
     buttons: {
         distribute: {
             label: `Distribute`,
@@ -67,7 +70,7 @@ let custom_dialog = new Dialog({
         copper = copper > 0 ? copper : 0;
         silver = silver > 0 ? silver : 0;
         gold = gold > 0 ? gold : 0;
-        let player_count = pc_actors.length;
+        let player_count = pc_actor_names.length;
         let total_in_copper = copper + silver*10 + gold*100;
         let player_share = Math.ceil(total_in_copper / (player_count / (1 - party_fund_ratio)));
         let player_share_array = Array(player_count).fill().map(u => ({
@@ -115,29 +118,66 @@ let custom_dialog = new Dialog({
         // TODO Check if any person is still missing money after
         // this might be fixable, for now I'll alert it in the
         // output message building section
+       
+        //console.log(JSON.parse(JSON.stringify(player_share_array)));
+        //console.log("spare gp: " + spare_gold);
+        //console.log("spare sp: " + spare_silver);
+        //console.log("spare cp: " + spare_copper);
         
-        
- 
-        console.log(JSON.parse(JSON.stringify(player_share_array)));
-        console.log("spare gp: " + spare_gold);
-        console.log("spare sp: " + spare_silver);
-        console.log("spare cp: " + spare_copper);
-        
-        pc_actors.forEach((actor, index) => {
-            let pc_currency = actor.data.data.currency;
-            let share = player_share_array[index];
-            actor.update({
-                "data.currency.cp": pc_currency.cp + share.cp,
-                "data.currency.sp": pc_currency.sp + share.sp,
-                "data.currency.gp": pc_currency.gp + share.gp,
+        try {
+            await Boneyard.executeAsGM_wrapper((args)=>{
+                let actors = [];
+                args.names.forEach(name => {
+                    let actor = game.actors.find(actor => actor.data.name === name);
+                    if (actor === undefined) {
+                        const e = new Error(`Name '${name}' does not correspond to an actor.`);
+                        e.name = "UndefinedActor";
+                        throw e;
+                    } 
+                    actors.push(actor);
+                });
+                
+                actors.forEach((actor, index) => {
+                    let currency = actor.data.data.currency;
+                    let share = args.shares[index];
+                    actor.update({
+                        "data.currency.cp": currency.cp + share.cp,
+                        "data.currency.sp": currency.sp + share.sp,
+                        "data.currency.gp": currency.gp + share.gp,
+                    });
+                });
+                
+                let party_actor = game.actors.get(args.party_actor_id);
+                if (party_actor === undefined) {
+                    const e = new Error(`ID '${args.party_actor_id}' does not correspond to an actor.`);
+                    e.name = "UndefinedActor";
+                    throw e;
+                } 
+                let currency = party_actor.data.data.currency;
+                party_actor.update({
+                    "data.currency.cp": currency.cp + args.spare_copper,
+                    "data.currency.sp": currency.sp + args.spare_silver,
+                    "data.currency.gp": currency.gp + args.spare_gold,
+                });
+            }, { 
+                party_actor_id: party_actor_id,
+                names: pc_actor_names, 
+                shares: player_share_array,
+                spare_copper: spare_copper,
+                spare_silver: spare_silver,
+                spare_gold: spare_gold
             });
-        });
-        
-        party_actor.update({
-            "data.currency.cp": currency.cp + spare_copper,
-            "data.currency.sp": currency.sp + spare_silver,
-            "data.currency.gp": currency.gp + spare_gold,
-        });
+        } catch(e) {
+            console.error(e);
+            if (e.name === "SocketlibNoGMConnectedError") {
+                console.log("Error: Can't run 'Distribute Money' macro, no GM client available.");
+                ui.notifications.error("Error: Can't run 'Distribute Money' macro, no GM client available.");
+            } else {
+                console.log("Error: " + e.message);
+                ui.notifications.error("Error: " + e.message);
+            }
+            return;
+        }
 
         let current_day = SimpleCalendar.api.getCurrentDay().numericRepresentation;
         current_day = current_day == 1 ? ""+current_day+"st"
@@ -154,9 +194,9 @@ let custom_dialog = new Dialog({
             <span>Money to distribute: ${gold}gp ${silver}sp ${copper}cp</span><br>
         `;
           
-        pc_actors.forEach((actor, index) => {
+        pc_actor_names.forEach((name, index) => {
             let share = player_share_array[index];
-            chat_output_html += `<span>${actor.data.name} gets: ${share.gp}gp ${share.sp}sp ${share.cp}cp`;
+            chat_output_html += `<span>${name} gets: ${share.gp}gp ${share.sp}sp ${share.cp}cp`;
             if (share.remaining > 0) {
                 chat_output_html += ` (short ${+(share.remaining/10).toFixed(1)}sp)`;
             }

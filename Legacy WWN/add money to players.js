@@ -1,12 +1,14 @@
 const party_actor = game.actors.get("UjwAEFk2K9bC9nJu"); // Party actor id
-let pc_actor_names = [];
-pc_actor_names.push("Rosaria Synn");
-pc_actor_names.push("Kazem Sahaba");
-pc_actor_names.push("Aldin Conger");
-pc_actor_names.push("Shelley");
-pc_actor_names.push("Siwa Chekov");
+let pc_actor_names = [
+    "Rosaria Synn",
+    "Kazem Sahaba",
+    "Aldin Conger",
+    "Shelley",
+    "Siwa Chekov"
+];
 
 let button_hit = false;
+
 let custom_dialog = new Dialog({
     title:`Add Money to Players`,
     content: `
@@ -51,11 +53,18 @@ let custom_dialog = new Dialog({
 
         try {
             await Boneyard.executeAsGM_wrapper((args)=>{
+                
                 let actors = [];
                 args.names.forEach(name => {
                     let actor = game.actors.find(actor => actor.data.name === name);
-                    if (actor !== undefined) actors.push(actor);
+                    if (actor === undefined) {
+                        const e = new Error(`Name '${name}' does not correspond to an actor.`);
+                        e.name = "UndefinedActor";
+                        throw e;
+                    } 
+                    actors.push(actor);
                 });
+                
                 actors.forEach(actor => {
                     let currency = actor.data.data.currency;
                     actor.update({
@@ -64,6 +73,7 @@ let custom_dialog = new Dialog({
                         "data.currency.gp": currency.gp + args.gold,
                     });
                 });
+                
             }, { 
                 names: pc_actor_names, 
                 copper: copper, 
@@ -71,9 +81,14 @@ let custom_dialog = new Dialog({
                 gold: gold 
             });
         } catch(e) {
-            //console.error(e);
-            console.log("Error: Can't run 'Add Money to Players' macro, no GM client available.");
-            ui.notifications.error("Error: Can't run 'Add Money to Players' macro, no GM client available.");
+            console.error(e);
+            if (e.name === "SocketlibNoGMConnectedError") {
+                console.log("Error: Can't run 'Distribute Money' macro, no GM client available.");
+                ui.notifications.error("Error: Can't run 'Distribute Money' macro, no GM client available.");
+            } else {
+                console.log("Error: " + e.message);
+                ui.notifications.error("Error: " + e.message);
+            }
             return;
         }
         

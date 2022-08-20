@@ -61,6 +61,7 @@ async function check_morale(token) {
     const morale_dice_roll = await (new Roll(roll_formula)).roll();
 
     if (morale_dice_roll.total > morale_val) { // Failed morale check
+        // check to see if effect is already on them, if not add it
         if (!game.cub.hasCondition("EFFECT.StatusFear", token.actor)) {
             game.cub.addCondition("EFFECT.StatusFear", token.actor);
         }
