@@ -95,9 +95,7 @@ await Requestor.request({
                             ` 
             });
             
-            const output_msg = async (token, too_strong, destroyed, died, save_roll, save_val) => {
-                console.log(token, too_strong, destroyed, died, save_roll, save_val);
-                
+            const output_msg = async (token, too_strong, died, destroyed, save_roll, save_val) => {
                 let smite_status;
                 if (too_strong) {
                     if (died) {
@@ -149,7 +147,7 @@ await Requestor.request({
                             new_hp = token.actor.data.data.hp.value - damage_roll.total;
                         }
                         if (new_hp < 1) died = true;
-                        output_msg(token, false, destroyed, died, save_roll, phys_save);
+                        output_msg(token, false, died, destroyed, save_roll, phys_save);
                         token.actor.update({
                             "data.hp.value": new_hp
                         });
@@ -157,7 +155,7 @@ await Requestor.request({
                 } else {
                     new_hp = token.actor.data.data.hp.value - damage_roll.total;
                     if (new_hp < 1) died = true;
-                    output_msg(token, true, false, died);
+                    output_msg(token, true, died);
                     token.actor.update({
                         "data.hp.value": new_hp
                     });
