@@ -1,3 +1,4 @@
+const DEBUG = true;
 let result = await warpgate.crosshairs.show(
     config = {
         size: 8,
@@ -22,12 +23,11 @@ const sleep_template_data = {
     fillColor: game.user.color,
 };
 let sleep_template = await canvas.scene.createEmbeddedDocuments("MeasuredTemplate", [sleep_template_data]);
+if (DEBUG) console.log(sleep_template[0]);
 // When using DF Template Enhancements, targeting tokens
 // is part of the template drawing. So long as await is
 // used on the template creation, we should have all of
 // the tokens targeted after creation resolves.
-
-// TODO send template id to boneyard func so gm deletes template after applying sleep
 
 let sleep_caster_string;
 if (canvas.tokens.controlled.length > 0) {
@@ -59,7 +59,7 @@ if (canvas.tokens.controlled.length > 0) {
 }
 
 let send_result_to_chat = true;
-console.log(game.user.targets);
+if (DEBUG) console.log(game.user.targets);
 const sleep_condition_cub = {
     "flags": {
         "combat-utility-belt": {
@@ -79,8 +79,8 @@ const sleep_condition_cub = {
 let targets = [];
 let target_names = [];
 game.user.targets.forEach(token => {
-    console.log(token);
     if (!(token.actor.type === "monster" || token.actor.type === "character")) return;
+    if (DEBUG) console.log(token);
     targets.push(token.id);
     target_names.push(token.actor.data.name);
 });
@@ -95,6 +95,10 @@ await Requestor.request({
         action: async () => {
             if (!game.user.isGM) {
                 ui.notifications.warn("Sleep can only be applied by a GM.");
+                return;
+            }
+            if (canvas.templates.placeables.find(template => template.id === args.sleep_template_id) === undefined) {
+                ui.notifications.warn("This instance of the Sleep spell has already been applied.");
                 return;
             }
             
@@ -136,9 +140,12 @@ await Requestor.request({
                 }
             });
             
+            canvas.scene.deleteEmbeddedDocuments("MeasuredTemplate", [args.sleep_template_id]);
+            
         },
         sleep_targets: targets,
         sleep_condition: sleep_condition_cub,
-        send_to_chat: send_result_to_chat
+        send_to_chat: send_result_to_chat,
+        sleep_template_id: sleep_template[0].id
     }],
 });
