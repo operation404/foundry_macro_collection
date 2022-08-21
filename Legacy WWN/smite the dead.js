@@ -95,25 +95,33 @@ await Requestor.request({
                             ` 
             });
             
-            
-            // TODO has a bug where even when save_render is undefined, it's still
-            // printing as if they made a save, which just spits 'undefined' in the
-            // chat since there's no roll render
-            
-            
-            
-            const output_msg = (token, destroyed, save_render=undefined, save_val=0) => {
-                let destroyed_result = destroyed ? 
-                                    `<b style="color:red;">was destroyed!</b>` :
-                                    `<b style="color:green;">resisted destruction!</b>`;
-                console.log(save_render);
-                let save_result = destroyed_result === undefined ? 
-                                    `${token.actor.data.name} is too strong to be outright destroyed.` :
-                                    `<span style="float: left;">${token.actor.data.name}'s saving throw (${save_val}): </span></br> ${save_render}`;
+            const output_msg = async (token, too_strong, destroyed, died, save_roll, save_val) => {
+                
+                let smite_status;
+                if (too_strong) {
+                    if (died) {
+                        smite_status = `is too powerful to be outright destroyed, <b style="color:red;">but died anyway.</b>`;
+                    } else {
+                        smite_status = `<b style="color:green;">is too powerful to be outright destroyed.</b>`;
+                    }
+                } else {
+                    if (destroyed) {
+                        smite_status = `<b style="color:red;">was destroyed.</b>`;
+                    } else if (died) {
+                        smite_status = `resisted destruction, <b style="color:red;">but died anyway.</b>`;
+                    } else {
+                        smite_status = `<b style="color:green;">resisted destruction.</b>`;
+                    }
+                }
+                
+                let save_status = save_roll === undefined ? "" : 
+                    `${token.actor.data.name}'s saving throw (${save_val}): </br>${await save_roll.render()}`;
+                
                 let chat_message_html = `
-                    <span style="float: left;">${token.actor.data.name} ${destroyed_result}</span></br>
-                    ${save_result}
+                    ${token.actor.data.name} ${smite_status}</br>
+                    ${save_status}
                     `;
+                    
                 ChatMessage.create({
                     user: game.user._id,
                     speaker: ChatMessage.getSpeaker({token: token.document}),
@@ -131,34 +139,37 @@ await Requestor.request({
                 if (hit_die_count <= caster_level) {
                     let phys_save = token.actor.data.data.saves.physical.value;
                     
-                    // can't use await inside of forEach 
+                    // can't use await inside of forEach, so use promise then()
                     (new Roll("1d20")).roll().then(save_roll => {
                         let destroyed = false;
+                        let died = false;
+                        let new_hp;
                         
                         if (save_roll.total < phys_save) { // fail
-                            token.actor.update({
-                                "data.hp.value": 0
-                            });
+                            new_hp = 0;
                             destroyed = true;
+                            died = true;
                         } else { // success
-                            token.actor.update({
-                                "data.hp.value": token.actor.data.data.hp.value - damage_roll.total
-                            });
+                            new_hp = token.actor.data.data.hp.value - damage_roll.total;
+                            if (new_hp < 1) died = true;
                         }
-                        
-                        save_roll.render().then(save_render => {
-                            output_msg(token, destroyed, save_render, phys_save);
+                        token.actor.update({
+                            "data.hp.value": new_hp
                         });
+                        
+                        output_msg(token, false, destroyed, died, save_roll, phys_save);
                     });
                     
                 } else {
+                    let died = false;
+                    let new_hp = token.actor.data.data.hp.value - damage_roll.total;
                     token.actor.update({
-                        "data.hp.value": token.actor.data.data.hp.value - damage_roll.total
+                        "data.hp.value": new_hp
                     });
-                    output_msg(token, false);
+                    if (new_hp < 1) died = true;
+                    output_msg(token, true, false, died);
                 }
             });
-            
             canvas.scene.deleteEmbeddedDocuments("MeasuredTemplate", [args.smite_template_id]);
             
         },
