@@ -1,3 +1,34 @@
+let result = await warpgate.crosshairs.show(
+    config = {
+        size: 8,
+        icon: "icons/svg/target.svg",
+        label: "Sleep Radius",
+        tag: "SleepRadius",
+        interval: 1,
+        fillAlpha: 0.2,
+        lockSize: true,
+        rememberControlled: true,
+    },
+    callbacks = {}
+);
+if (result.cancelled) return;
+
+const sleep_template_data = {
+    t: "circle",
+    user: game.user.id,
+    distance: (canvas.scene.data.gridDistance) * 4, //radius
+    x: result.x,
+    y: result.y,
+    fillColor: game.user.color,
+};
+let sleep_template = await canvas.scene.createEmbeddedDocuments("MeasuredTemplate", [sleep_template_data]);
+// When using DF Template Enhancements, targeting tokens
+// is part of the template drawing. So long as await is
+// used on the template creation, we should have all of
+// the tokens targeted after creation resolves.
+
+// TODO send template id to boneyard func so gm deletes template after applying sleep
+
 let sleep_caster_string;
 if (canvas.tokens.controlled.length > 0) {
     sleep_caster_string = canvas.tokens.controlled[0].actor.data.name;
