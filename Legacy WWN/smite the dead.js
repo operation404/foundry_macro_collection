@@ -96,6 +96,7 @@ await Requestor.request({
             });
             
             const output_msg = async (token, too_strong, destroyed, died, save_roll, save_val) => {
+                console.log(token, too_strong, destroyed, died, save_roll, save_val);
                 
                 let smite_status;
                 if (too_strong) {
@@ -136,42 +137,34 @@ await Requestor.request({
                     return;
                 }
                 
+                let phys_save = token.actor.data.data.saves.physical.value;
+                let destroyed = false, died = false;
+                let new_hp;
                 if (hit_die_count <= caster_level) {
-                    let phys_save = token.actor.data.data.saves.physical.value;
-                    
-                    // can't use await inside of forEach, so use promise then()
-                    (new Roll("1d20")).roll().then(save_roll => {
-                        let destroyed = false;
-                        let died = false;
-                        let new_hp;
-                        
+                    (new Roll("1d20")).roll().then(save_roll => { // can't await in forEach, use promise then()
                         if (save_roll.total < phys_save) { // fail
                             new_hp = 0;
                             destroyed = true;
-                            died = true;
                         } else { // success
                             new_hp = token.actor.data.data.hp.value - damage_roll.total;
-                            if (new_hp < 1) died = true;
                         }
+                        if (new_hp < 1) died = true;
+                        output_msg(token, false, destroyed, died, save_roll, phys_save);
                         token.actor.update({
                             "data.hp.value": new_hp
                         });
-                        
-                        output_msg(token, false, destroyed, died, save_roll, phys_save);
                     });
-                    
                 } else {
-                    let died = false;
-                    let new_hp = token.actor.data.data.hp.value - damage_roll.total;
+                    new_hp = token.actor.data.data.hp.value - damage_roll.total;
+                    if (new_hp < 1) died = true;
+                    output_msg(token, true, false, died);
                     token.actor.update({
                         "data.hp.value": new_hp
                     });
-                    if (new_hp < 1) died = true;
-                    output_msg(token, true, false, died);
                 }
             });
-            canvas.scene.deleteEmbeddedDocuments("MeasuredTemplate", [args.smite_template_id]);
             
+            canvas.scene.deleteEmbeddedDocuments("MeasuredTemplate", [args.smite_template_id]);
         },
         smite_targets: targets,
         send_to_chat: send_result_to_chat,
