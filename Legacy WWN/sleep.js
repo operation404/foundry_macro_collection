@@ -29,8 +29,6 @@ let sleep_template = await canvas.scene.createEmbeddedDocuments("MeasuredTemplat
 // the tokens targeted after creation resolves.
 if (DEBUG) console.log(sleep_template[0].id);
 
-// TODO send template id to boneyard func so gm deletes template after applying sleep
-
 let sleep_caster_string;
 if (canvas.tokens.controlled.length > 0) {
     sleep_caster_string = canvas.tokens.controlled[0].actor.data.name;
