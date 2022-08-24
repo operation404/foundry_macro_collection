@@ -134,6 +134,9 @@ await Requestor.request({
                     ui.notifications.warn(token.actor.data.name + " has improper hit dice set.");
                     return;
                 }
+                if (token.actor.data.data.hp.value < 1) { // Don't smite dead targets
+                    return;
+                }
                 
                 let phys_save = token.actor.data.data.saves.physical.value;
                 let destroyed = false, died = false;

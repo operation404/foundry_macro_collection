@@ -23,11 +23,13 @@ const sleep_template_data = {
     fillColor: game.user.color,
 };
 let sleep_template = await canvas.scene.createEmbeddedDocuments("MeasuredTemplate", [sleep_template_data]);
-if (DEBUG) console.log(sleep_template[0]);
 // When using DF Template Enhancements, targeting tokens
 // is part of the template drawing. So long as await is
 // used on the template creation, we should have all of
 // the tokens targeted after creation resolves.
+if (DEBUG) console.log(sleep_template[0].id);
+
+// TODO send template id to boneyard func so gm deletes template after applying sleep
 
 let sleep_caster_string;
 if (canvas.tokens.controlled.length > 0) {
@@ -88,7 +90,7 @@ game.user.targets.forEach(token => {
 await Requestor.request({
     whisper: [],
     title: `${sleep_caster_string} casts Sleep`,
-    img: "icons/svg/sleep.svg",
+    img: "icons/wc3_sleep.png",
     footer: target_names,
     buttonData: [{
         label: "Apply Sleep",
@@ -127,6 +129,9 @@ await Requestor.request({
                                 token.actor.data.data.details.level;
                 if (isNaN(+hit_die_count) || (hit_die_count = parseInt(hit_die_count)) < 1) {
                     ui.notifications.warn(token.actor.data.name + " has improper hit dice/level set.");
+                    return;
+                }
+                if (token.actor.data.data.hp.value < 1) { // Don't apply sleep to dead creatures
                     return;
                 }
                 

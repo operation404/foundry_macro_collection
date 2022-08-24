@@ -53,6 +53,9 @@ async function check_morale(token) {
         ui.notifications.warn(token.actor.data.name + " has no morale score set.");
         return;
     }
+    if (token.actor.data.data.hp.value < 1) { // Don't test morale if dead
+        return; 
+    }
     
     let roll_formula = check_modifier === 0 ? "2d6"
                         : check_modifier > 0 ? "2d6 - " + check_modifier
