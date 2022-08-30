@@ -25,6 +25,7 @@ let calc_water = +(water.data.data.quantity / est_water).toFixed(2);
 let calc_water_hot = +(water.data.data.quantity / est_water_hot).toFixed(2); 
 
 let water_multiplier;
+let days = 1;
 
 let custom_dialog = new Dialog({
     title:`Daily Travel Resource Consumption`,
@@ -58,6 +59,16 @@ let custom_dialog = new Dialog({
                 <label style="white-space: nowrap; padding-right: 10px;">Hot climate water used: ${est_water_hot}</label>
                 <label style="white-space: nowrap;">Days remaining: ${calc_water_hot}</label>
             </div>
+            
+            <div class="form-group" style="flex-direction: row;">
+                <div></div>
+                <label style="white-space: nowrap; flex-grow: 0; padding-right: 10px;">Days: </label>
+                <button style="flex-grow: 0; line-height: normal; min-width: 40px;" id="days_minus_button" title="Click to subtract 1. Shift-click to subtract 7.">-</button>
+                <input style="text-align:center; height: auto; min-width: 80px; flex-grow: 0;" id="days" type="number" step="1" min="0" value="${days}" />
+                <button style="flex-grow: 0; line-height: normal; min-width: 40px;" id="days_add_button" title="Click to add 1. Shift-click to add 7.">+</button>
+                <div></div>
+            </div>
+            
             <hr>
         </form>
     `,
@@ -84,17 +95,36 @@ let custom_dialog = new Dialog({
     
     default: "none",
     
-    render: (html) => {}, // Do html value updating and hooking here
+    render: (html) => {
+        
+        //const update_computed_fields = () => {};
+        
+        $("#days_add_button").on("click", (e) => {
+            if (e.shiftKey) {days += 7;} else {days += 1;}
+            $("#days").val(days);
+            //update_computed_fields();
+        });
+        $("#days_minus_button").on("click", (e) => {
+            if (e.shiftKey) {days -= 7;} else {days -= 1;}
+            days = days < 0 ? 0 : days;
+            $("#days").val(days);
+            //update_computed_fields();
+        });
+        
+        
+    }, // Do html value updating and hooking here
     
     close: async (html) => {
         if (water_multiplier === undefined) return;
+        
+        days = $("#days").val();
 
         let old_rations_quantity = rations.data.data.quantity;
         let old_feed_quantity = animal_feed.data.data.quantity;
         let old_water_quantity = water.data.data.quantity;
-        let new_rations_quantity = old_rations_quantity - est_rations;
-        let new_feed_quantity = old_feed_quantity - est_feed;
-        let new_water_quantity = old_water_quantity - (est_water * water_multiplier);
+        let new_rations_quantity = old_rations_quantity - (est_rations * days);
+        let new_feed_quantity = old_feed_quantity - (est_feed * days);
+        let new_water_quantity = old_water_quantity - (est_water * water_multiplier * days);
         
         let insufficient_rations = "";
         let rations_output = new_rations_quantity;
@@ -136,8 +166,25 @@ let custom_dialog = new Dialog({
         let old_month = SimpleCalendar.api.getCurrentMonth().name;
         let old_year = SimpleCalendar.api.getCurrentYear().numericRepresentation;
         
-        SimpleCalendar.api.changeDate({day: 1}); // Advance 1 day forward
-        
+        try {
+            await Boneyard.executeAsGM_wrapper((args)=>{
+                // advance the calendar by however many days
+                SimpleCalendar.api.changeDate({day: args.days_to_advance});
+            }, { 
+                days_to_advance: days, 
+            });
+        } catch(e) {
+            console.error(e);
+            if (e.name === "SocketlibNoGMConnectedError") {
+                console.log("Error: Can't run 'Expend Daily Food/Water' macro, no GM client available.");
+                ui.notifications.error("Error: Can't run 'Expend Daily Food/Water' macro, no GM client available.");
+            } else {
+                console.log("Error: " + e.message);
+                ui.notifications.error("Error: " + e.message);
+            }
+            return;
+        }
+
         let new_day = SimpleCalendar.api.getCurrentDay().numericRepresentation;
         new_day = new_day == 1 ? ""+new_day+"st"
                     : new_day == 2 ? ""+new_day+"nd"
