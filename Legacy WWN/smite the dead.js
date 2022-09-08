@@ -38,7 +38,7 @@ if (DEBUG) console.log(game.user.targets);
 let targets = [];
 let target_names = [];
 game.user.targets.forEach(token => {
-    if (token.actor.type !== "monster") return;
+    if (token.actor.type !== "monster" || token.data.disposition == 1) return;
     if (DEBUG) console.log(token);
     targets.push(token.id);
     target_names.push(token.actor.data.name);
