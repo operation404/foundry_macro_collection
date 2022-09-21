@@ -67,6 +67,11 @@ await Requestor.request({
                 return;
             }
             
+            let master_of_bones = caster_actor.data.items.find(item => 
+                item.data.type === "art" && item.data.name.toLowerCase() === "master of bones"
+            ) !== undefined;
+            let save_dice_formula = master_of_bones ? "2d20kl1" : "1d20";
+
             let caster_level;
             if (caster_actor.type === "monster") {
                 let hd = caster_actor.data.data.hp.hd;
@@ -142,7 +147,7 @@ await Requestor.request({
                 let destroyed = false, died = false;
                 let new_hp;
                 if (hit_die_count <= caster_level) {
-                    (new Roll("1d20")).roll().then(save_roll => { // can't await in forEach, use promise then()
+                    (new Roll(save_dice_formula)).roll().then(save_roll => { // can't await in forEach, use promise then()
                         if (save_roll.total < phys_save) { // fail
                             new_hp = 0;
                             destroyed = true;
