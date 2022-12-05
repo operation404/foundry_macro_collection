@@ -67,7 +67,7 @@ const WWN_Charge = Object.freeze({
             return;
         }
 
-        //tokens = tokens instanceof Array ? tokens : [tokens];
+        tokens = tokens instanceof Array ? tokens : [tokens];
         tokens.forEach(t => {
             const t_charge_cond = t.actor.effects.find(c => c.data.flags.core.statusId === `combat-utility-belt.${charge_ae_condition_data.id}`);
             if (t_charge_cond !== undefined) {
@@ -103,15 +103,20 @@ const WWN_Charge = Object.freeze({
 Hooks.on("updateCombat", (combat_document, change, options, userId) => {
     if (!combat_document.started) return;
     const active_gm_user = game.users.find(u => u.isGM && u.active);
-    if (active_gm_user === undefined || active_gm_user.id !== userId) return;
+    if (active_gm_user === undefined || active_gm_user.id !== game.user.id) return;
     const acting_token = canvas.tokens.documentCollection.find(t => t.id === combat_document.current.tokenId);
     if (acting_token !== undefined) WWN_Charge.remove([acting_token]);
 });
 
 // Remove charge effect from all tokens after the combat ends
-Hooks.on("deleteCombat", (combat_document, change, options, userId) => {
-    const active_gm_user = game.users.find(u => u.isGM && u.active);
-    if (active_gm_user === undefined || active_gm_user.id !== userId) return;
+Hooks.on("deleteCombat", (combat_document, options, userId) => {
+    //const active_gm_user = game.users.find(u => u.isGM && u.active);
+    //if (active_gm_user === undefined || active_gm_user.id !== game.user.id) return;
+
+    // 'userId' is the id of the person who caused the hook to be fired
+    // For example, if I ended the combat, it will be my id there on all clients
+    // Since only should be able to end combat, it's assumed the person firing it is a GM
+    if (userId !== game.user.id) return;
     WWN_Charge.remove(Array.from(combat_document.scene.tokens));
 });
 
