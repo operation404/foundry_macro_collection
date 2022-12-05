@@ -79,7 +79,7 @@ class WWN_Charge {
         if (WWN_Charge.adjust_keys[actor.type] === undefined) throw new Error(`Invalid actor type: ${actor.type}`);
         actor.update({
             // { [VAR]: ... } syntax allows using dynamic keys in object literals
-            ["data.aac." + WWN_Charge.adjust_keys[actor.type]]: actor.data.data.aac[WWN_Charge.adjust_keys[actor.type]] + WWN_Charge.adjust_values[adjust_type]
+            [`data.aac.${WWN_Charge.adjust_keys[actor.type]}`]: actor.data.data.aac[WWN_Charge.adjust_keys[actor.type]] + WWN_Charge.adjust_values[adjust_type]
         });
     }
 
