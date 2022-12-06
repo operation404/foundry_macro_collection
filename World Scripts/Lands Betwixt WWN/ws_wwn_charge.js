@@ -47,11 +47,13 @@ class WWN_Charge {
     }
 
     static apply_ac_penalty(active_effect_document, options, user_id) {
+        if (user_id !== game.user.id) return;
         if (active_effect_document.data.flags.core.statusId !== WWN_Charge.condition_data.flags.core.statusId) return;
         WWN_Charge.adjust_ac(active_effect_document.parent, "subtract");
     }
 
     static remove_ac_penalty(active_effect_document, options, user_id) {
+        if (user_id !== game.user.id) return;
         if (active_effect_document.data.flags.core.statusId !== WWN_Charge.condition_data.flags.core.statusId) return;
         WWN_Charge.adjust_ac(active_effect_document.parent, "add");
     }
