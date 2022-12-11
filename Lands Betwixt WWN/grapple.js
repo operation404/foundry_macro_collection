@@ -75,23 +75,8 @@ const custom_dialog = new Dialog({
         }
 
         if (grapple_success) {
-            const condition_data = {
-                "flags": {
-                    "combat-utility-belt": {
-                        "conditionId": "restrain",
-                        "overlay": false
-                    },
-                    "core": {
-                        "statusId": "combat-utility-belt.restrain",
-                        "overlay": false
-                    }
-                },
-                "icon": "icons/svg/net.svg",
-                "label": "Restrained"
-            };
-
             if (grapple_defender_token.actor.effects.find(c => c.data.flags.core.statusId === "combat-utility-belt.restrain") === undefined) {
-                grapple_defender_token.actor.createEmbeddedDocuments("ActiveEffect", [condition_data]);
+                apply_grapple_condition(grapple_defender_token);
             }
         }
 
@@ -134,6 +119,50 @@ function get_grapple_data(token) {
         return undefined;
     }
     return data;
+}
+
+async function apply_grapple_condition(token) {
+    const condition_data = {
+        "flags": {
+            "combat-utility-belt": {
+                "conditionId": "restrain",
+                "overlay": false
+            },
+            "core": {
+                "statusId": "combat-utility-belt.restrain",
+                "overlay": false
+            }
+        },
+        "icon": "icons/svg/net.svg",
+        "label": "Restrained"
+    };
+
+    // This macro won't work if the GM is on a different scene.
+    // The token id will be from a token on the player's scene,
+    // and the GM's client will try to find that token in the scene
+    // they are currently on.
+
+    try {
+        Boneyard.executeAsGM_wrapper((args) => {
+            const token = canvas.tokens.documentCollection.find(t => t.id === args.token_id);
+            if (token !== undefined) {
+                token.actor.createEmbeddedDocuments("ActiveEffect", [args.condition_data]);
+            }
+        }, {
+            condition_data: condition_data,
+            token_id: token.id
+        });
+
+    } catch (e) {
+        console.error(e);
+        if (e.name === "SocketlibNoGMConnectedError") {
+            console.log("Error: Can't run 'Grapple' macro, no GM client available.");
+            ui.notifications.error("Error: Can't run 'Grapple' macro, no GM client available.");
+        } else {
+            console.log("Error: " + e.message);
+            ui.notifications.error("Error: " + e.message);
+        }
+    }
 }
 
 custom_dialog.render(force = true, options = {
