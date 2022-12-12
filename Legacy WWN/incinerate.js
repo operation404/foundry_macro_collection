@@ -11,8 +11,8 @@ let result = await warpgate.crosshairs.show(
     config = {
         size: 8,
         icon: "icons/svg/target.svg",
-        label: "Smite Radius",
-        tag: "SmiteRadius",
+        label: "Incinerate Radius",
+        tag: "IncinerateRadius",
         interval: 1,
         fillAlpha: 0.2,
         lockSize: true,
