@@ -1,4 +1,13 @@
 const DEBUG = true;
+
+let sleep_caster_string;
+if (canvas.tokens.controlled.length > 0) {
+    sleep_caster_string = canvas.tokens.controlled[0].actor.data.name;
+} else {
+    ui.notifications.warn("No token controlled for caster.");
+    return;
+}
+
 let result = await warpgate.crosshairs.show(
     config = {
         size: 8,
@@ -28,35 +37,6 @@ let sleep_template = await canvas.scene.createEmbeddedDocuments("MeasuredTemplat
 // used on the template creation, we should have all of
 // the tokens targeted after creation resolves.
 if (DEBUG) console.log(sleep_template[0].id);
-
-let sleep_caster_string;
-if (canvas.tokens.controlled.length > 0) {
-    sleep_caster_string = canvas.tokens.controlled[0].actor.data.name;
-} else {
-    switch(game.user.name) {
-    case "Caelan GM":
-    case "Caelan":
-        sleep_caster_string = "Rosaria Synn";
-        break;
-    case "Mason":
-        sleep_caster_string = "Kazem Sahaba";
-        break;
-    case "Brad":
-        sleep_caster_string = "Aldin Conger";
-        break;
-    case "Nick":
-        sleep_caster_string = "Shelley";
-        break;
-    case "Amanda":
-        sleep_caster_string = "Siwa Chekov";
-        break;
-    case "Gamemaster":
-        sleep_caster_string = "Gamemaster";
-        break;
-    default:
-        return;
-    }   
-}
 
 let send_result_to_chat = true;
 if (DEBUG) console.log(game.user.targets);
@@ -101,38 +81,40 @@ await Requestor.request({
                 ui.notifications.warn("This instance of the Sleep spell has already been applied.");
                 return;
             }
-            
+
             let tokens = [];
             args.sleep_targets.forEach(id => {
                 let token = canvas.tokens.placeables.find(token => token.id === id);
                 if (token !== undefined) tokens.push(token);
             });
-            
+
             const output_msg = (token, slept) => {
-                let result = slept ? `<b style="color:red;">was put to sleep!</b>` 
-                                   : `<b style="color:green;">resisted being put to sleep!</b>`;
+                let result = slept ? `<b style="color:red;">was put to sleep!</b>` :
+                    `<b style="color:green;">resisted being put to sleep!</b>`;
                 let chat_message_html = `
                     <span style="float: left;">${token.actor.data.name} ${result}</span></br>
                     `;
                 ChatMessage.create({
                     user: game.user._id,
-                    speaker: ChatMessage.getSpeaker({token: token.document}),
-                    content: chat_message_html 
+                    speaker: ChatMessage.getSpeaker({
+                        token: token.document
+                    }),
+                    content: chat_message_html
                 });
             };
-            
+
             tokens.forEach(token => {
-               let hit_die_count = token.actor.type === "monster" ? 
-                                token.actor.data.data.hp.hd : 
-                                token.actor.data.data.details.level;
-                if (isNaN(+hit_die_count) || (hit_die_count = parseInt(hit_die_count)) < 1) {
+                let hit_die_count = token.actor.type === "monster" ?
+                    token.actor.data.data.hp.hd :
+                    token.actor.data.data.details.level;
+                if (isNaN(hit_die_count = parseInt(hit_die_count)) || hit_die_count < 1) {
                     ui.notifications.warn(token.actor.data.name + " has improper hit dice/level set.");
                     return;
                 }
                 if (token.actor.data.data.hp.value < 1) { // Don't apply sleep to dead creatures
                     return;
                 }
-                
+
                 if (hit_die_count <= 4) { // Can be put to sleep
                     if (!game.cub.hasCondition("EFFECT.StatusAsleep", token.actor)) {
                         token.actor.createEmbeddedDocuments("ActiveEffect", [args.sleep_condition]);
@@ -142,9 +124,9 @@ await Requestor.request({
                     if (args.send_to_chat) output_msg(token, false);
                 }
             });
-            
+
             canvas.scene.deleteEmbeddedDocuments("MeasuredTemplate", [args.sleep_template_id]);
-            
+
         },
         sleep_targets: targets,
         sleep_condition: sleep_condition_cub,
