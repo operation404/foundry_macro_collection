@@ -26,7 +26,7 @@ if (result.cancelled) return;
 const wrathful_detonation_template_data = {
     t: "circle",
     user: game.user.id,
-    distance: (canvas.scene.data.gridDistance) * 4, //radius
+    distance: (canvas.scene.data.gridDistance) * 3, //radius
     x: result.x,
     y: result.y,
     fillColor: game.user.color,
