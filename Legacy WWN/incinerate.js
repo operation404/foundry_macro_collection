@@ -89,7 +89,7 @@ await Requestor.request({
             let damage_render = await damage_roll.render();
             ChatMessage.create({
                 user: game.user._id,
-                speaker: ChatMessage.getSpeaker({token: token.document}),
+                speaker: ChatMessage.getSpeaker({actor: caster_actor}),
                 content: `<span style="float: left;">Damage roll: </span></br>
                             ${damage_render}
                             ` 
