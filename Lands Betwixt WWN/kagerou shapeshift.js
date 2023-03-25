@@ -2,14 +2,16 @@ const kagerou = canvas.scene.tokens.find(a => a.name === "Kagerou");
 const cookie = canvas.scene.tokens.find(a => a.name === "Cookie");
 
 const custom_dialog = new Dialog({
-    title: `Token Lighting Controls`,
-
-    content: `
+  title: `Token Lighting Controls`,
+  
+  content: `
             <form>
                 <label style="white-space: nowrap; flex-grow: 0; padding-right: 5px;">Kagerou forms </label>
                 <div class="form-group" style="flex-direction: row;">
                     <button style="flex-grow: 0; min-width: max-content; white-space: nowrap;" id="kagerou_base_form">Base Form</button>
                     <button style="flex-grow: 0; min-width: max-content; white-space: nowrap;" id="kagerou_wolf_form">Wolf Form</button>
+                    <button style="flex-grow: 0; min-width: max-content; white-space: nowrap;" id="kagerou_werewolf_form">Werewolf Form</button>
+                    <button style="flex-grow: 0; min-width: max-content; white-space: nowrap;" id="Kagerounecromancertoken">Necromancer</button>
                 </div>
                 <hr>
                 
@@ -21,17 +23,18 @@ const custom_dialog = new Dialog({
                 <hr>
             </form>
   `,
-
-    buttons: {
-        close: {
-            label: `Close`,
-            callback: () => {}
-        },
+  
+  buttons: {
+    close: {
+      label: `Close`,
+      callback: () => {
+      }
     },
-    default: "close",
-
-    render: (html) => {
-
+  },
+  default: "close",
+  
+  render: (html) => {
+      
         // Kagerou buttons
         document.getElementById("kagerou_base_form").addEventListener("click", (e) => {
             update_kagerou("images/player%20tokens/Kagerou.png", 1);
@@ -39,7 +42,13 @@ const custom_dialog = new Dialog({
         document.getElementById("kagerou_wolf_form").addEventListener("click", (e) => {
             update_kagerou("images/player%20tokens/Kagerouwolftoken.png", 2);
         });
-
+        document.getElementById("kagerou_werewolf_form").addEventListener("click", (e) => {
+            update_kagerou("images/player%20tokens/Kagerou%20Werewolf.png", 3);
+        });
+        document.getElementById("Kagerounecromancertoken").addEventListener("click", (e) => {
+            update_kagerou("images/player%20tokens/Kagerounecromancertoken.png", 1);
+        });
+        
         // Cookie buttons
         document.getElementById("cookie_small_form").addEventListener("click", (e) => {
             update_cookie("images/player%20tokens/Cookie%20token.png", 1);
@@ -47,14 +56,14 @@ const custom_dialog = new Dialog({
         document.getElementById("cookie_big_form").addEventListener("click", (e) => {
             update_cookie("images/player%20tokens/Cookie%20Token%20Big.png", 2);
         });
-    },
-
-    close: () => {}
+  },
+  
+  close: () => {}
 });
 
 function update_kagerou(img, size) {
     if (kagerou === undefined) {
-        ui.notifications.warning("No Kagerou token found on this scene!");
+        ui.notifications.warn("No Kagerou token found on this scene!");
         return;
     }
     console.log(kagerou);
@@ -79,6 +88,4 @@ function update_cookie(img, size) {
 
 
 
-custom_dialog.render(force = true, options = {
-    width: 300
-});
+custom_dialog.render(force = true, options = {width: 300});
