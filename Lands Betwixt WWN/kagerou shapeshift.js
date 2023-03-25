@@ -2,7 +2,7 @@ const kagerou = canvas.scene.tokens.find(a => a.name === "Kagerou");
 const cookie = canvas.scene.tokens.find(a => a.name === "Cookie");
 
 const custom_dialog = new Dialog({
-  title: `Token Lighting Controls`,
+  title: `Kagerou Shapeshift Selector`,
   
   content: `
             <form>
