@@ -21,11 +21,19 @@ const laser_light_data = {
         attenuation: 0,
     }
 };
+const stone_turning_sound_data = {
+    easing: true,
+    path: "sound%20effects/rock%20moving%20extended%20with%20silence.ogg",
+    radius: 57.5,
+    repeat: false,
+    volume: 0.5,
+    walls: false
+};
 const barrier_objs = {
     tile_id: "zI7yDuno62DT7K5a",
     light_ids: ["p3tftDzFgBg0g4Vk", "fFqqJF8QsxIxVBu0", "78yJnzu48LfPzduR"]
 };
-const lights = {
+const lights = { 
     "A": scene.lights.get("vikO16LQamPE1uvv"),
     "B": scene.lights.get("juqoyby7OrdlklFv"),
     "C": scene.lights.get("vFktowkAbVamBCof"),
@@ -33,38 +41,27 @@ const lights = {
     "E": scene.lights.get("16QYZmcAWmwuxOSG"),
     "F": scene.lights.get("4zUV9FatkpulA22h"),
 };
-const tile_ids = {
-    "1": "Y2x3wgFiKmavPOqz",
-    "2": "yK9bdXa1kFahVRzY",
-    "3": "zqEgXRO0WEXZH907",
-    "4": "Zan7EGxcikP2CtbD",
-    "5": "0U7HJicYnF8shuPg",
-    "6": "u4hMSGprWRwmoctq",
-    "7": "Ps1LmOqUKUMtqRd4",
-    "8": "VtryHPOoz3f7Gwgt",
-    "9": "BsXGPeiG9O0Cuanu",
-};
 const tiles = {
-    "1": scene.tiles.get(tile_ids[1]),
-    "2": scene.tiles.get(tile_ids[2]),
-    "3": scene.tiles.get(tile_ids[3]),
-    "4": scene.tiles.get(tile_ids[4]),
-    "5": scene.tiles.get(tile_ids[5]),
-    "6": scene.tiles.get(tile_ids[6]),
-    "7": scene.tiles.get(tile_ids[7]),
-    "8": scene.tiles.get(tile_ids[8]),
-    "9": scene.tiles.get(tile_ids[9]),
+    "1": scene.tiles.get("Y2x3wgFiKmavPOqz"),
+    "2": scene.tiles.get("yK9bdXa1kFahVRzY"),
+    "3": scene.tiles.get("zqEgXRO0WEXZH907"),
+    "4": scene.tiles.get("Zan7EGxcikP2CtbD"),
+    "5": scene.tiles.get("0U7HJicYnF8shuPg"),
+    "6": scene.tiles.get("u4hMSGprWRwmoctq"),
+    "7": scene.tiles.get("Ps1LmOqUKUMtqRd4"),
+    "8": scene.tiles.get("VtryHPOoz3f7Gwgt"),
+    "9": scene.tiles.get("BsXGPeiG9O0Cuanu"),
 };
 const paths = {
-    [tile_ids[1]]: {"type": "angled", "up": undefined, "right": tiles[2], "down": tiles[4], "left": undefined},
-    [tile_ids[2]]: {"type": "angled", "up": undefined, "right": tiles[3], "down": tiles[5], "left": tiles[1]},
-    [tile_ids[3]]: {"type": "angled", "up": undefined, "right": undefined, "down": tiles[6], "left": tiles[2]},
-    [tile_ids[4]]: {"type": "angled", "up": tiles[1], "right": tiles[5], "down": tiles[7], "left": undefined},
-    [tile_ids[5]]: {"type": "angled", "up": tiles[2], "right": tiles[6], "down": tiles[8], "left": tiles[4]},
-    [tile_ids[6]]: {"type": "angled", "up": tiles[3], "right": undefined, "down": tiles[9], "left": tiles[5]},
-    [tile_ids[7]]: {"type": "angled", "up": tiles[4], "right": tiles[8], "down": undefined, "left": undefined},
-    [tile_ids[8]]: {"type": "straight","up": tiles[5], "right": tiles[9], "down": undefined, "left": tiles[7]},
-    [tile_ids[9]]: {"type": "angled", "up": tiles[6], "right": undefined, "down": undefined, "left": tiles[8]},
+    [tiles[1].id]: {"type": "angled", "up": undefined, "right": tiles[2], "down": tiles[4], "left": undefined},
+    [tiles[2].id]: {"type": "angled", "up": undefined, "right": tiles[3], "down": tiles[5], "left": tiles[1]},
+    [tiles[3].id]: {"type": "angled", "up": undefined, "right": undefined, "down": tiles[6], "left": tiles[2]},
+    [tiles[4].id]: {"type": "angled", "up": tiles[1], "right": tiles[5], "down": tiles[7], "left": undefined},
+    [tiles[5].id]: {"type": "angled", "up": tiles[2], "right": tiles[6], "down": tiles[8], "left": tiles[4]},
+    [tiles[6].id]: {"type": "angled", "up": tiles[3], "right": undefined, "down": tiles[9], "left": tiles[5]},
+    [tiles[7].id]: {"type": "angled", "up": tiles[4], "right": tiles[8], "down": undefined, "left": undefined},
+    [tiles[8].id]: {"type": "straight","up": tiles[5], "right": tiles[9], "down": undefined, "left": tiles[7]},
+    [tiles[9].id]: {"type": "angled", "up": tiles[6], "right": undefined, "down": undefined, "left": tiles[8]},
 };
 const direction_combinations = {
   "angled": {
@@ -80,6 +77,7 @@ const direction_combinations = {
       "270": ["right", "left"],
   },
 };
+
 // Example solutions:
 // rD rF gE gE + whatever else
 // 2,7,9 can only be manipulated by rD,rF,gE,gF
@@ -128,7 +126,7 @@ function trace_path(tile, in_direction) {
     const next_tile = paths[tile.id][out_direction];
     create_laser(tile, out_direction);
     if (next_tile === undefined) {
-        return tile.id === tile_ids[6] && out_direction === "right";
+        return tile.id === tiles[6].id && out_direction === "right";
     } else {
         return trace_path(next_tile, invert_direction(out_direction));
     }
@@ -164,6 +162,15 @@ async function rotate_tiles(rotations) {
         _id: e[0].id,
         rotation: e[0].rotation + e[1], // Positive e[1] values are clockwise rotations
     })));
+    
+    // create turning stone sound effects
+    scene.createEmbeddedDocuments("AmbientSound", rotations.map(e => ({
+        x: e[0].x + e[0].width/2,
+        y: e[0].y + e[0].height/2,
+        ...stone_turning_sound_data
+    }))).then(docs_arr => setTimeout(docs => 
+            scene.deleteEmbeddedDocuments("AmbientSound", docs.map(d => d.id)), 1500, docs_arr));
+
     test_lens_alignment();
 }
 
@@ -184,8 +191,8 @@ const lens_buttons_template = Handlebars.compile(`
         {{/each}}
     {{/with}}
 `);
-const clockwise_buttons = lens_buttons_template({dir: "clockwise", tiles: tile_ids});
-const counter_buttons = lens_buttons_template({dir: "counter", tiles: tile_ids});
+const clockwise_buttons = lens_buttons_template({dir: "clockwise", tiles: tiles});
+const counter_buttons = lens_buttons_template({dir: "counter", tiles: tiles});
 
 const dialog_content_template = Handlebars.compile(`
     <form>
@@ -262,29 +269,29 @@ const custom_dialog = new Dialog({
             
             document.getElementById("reset_lenses").addEventListener("click", e => {
                 scene.updateEmbeddedDocuments("Tile", [
-                    {_id: tile_ids[1], rotation: 270},
-                    {_id: tile_ids[2], rotation: 90},
-                    {_id: tile_ids[3], rotation: 270},
-                    {_id: tile_ids[4], rotation: 0},
-                    {_id: tile_ids[5], rotation: 180},
-                    {_id: tile_ids[6], rotation: 0},
-                    {_id: tile_ids[7], rotation: 180},
-                    {_id: tile_ids[8], rotation: 0},
-                    {_id: tile_ids[9], rotation: 90},
+                    {_id: tiles[1].id, rotation: 270},
+                    {_id: tiles[2].id, rotation: 90},
+                    {_id: tiles[3].id, rotation: 270},
+                    {_id: tiles[4].id, rotation: 0},
+                    {_id: tiles[5].id, rotation: 180},
+                    {_id: tiles[6].id, rotation: 0},
+                    {_id: tiles[7].id, rotation: 180},
+                    {_id: tiles[8].id, rotation: 0},
+                    {_id: tiles[9].id, rotation: 90},
                 ]).then(() => test_lens_alignment());
             });
             
             document.getElementById("solve_lenses").addEventListener("click", e => {
                 scene.updateEmbeddedDocuments("Tile", [
-                    {_id: tile_ids[1], rotation: 90},
-                    {_id: tile_ids[2], rotation: 270},
-                    {_id: tile_ids[3], rotation: 0},
-                    {_id: tile_ids[4], rotation: 180},
-                    {_id: tile_ids[5], rotation: 0},
-                    {_id: tile_ids[6], rotation: 180},
-                    {_id: tile_ids[7], rotation: 90},
-                    {_id: tile_ids[8], rotation: 90},
-                    {_id: tile_ids[9], rotation: 0},
+                    {_id: tiles[1].id, rotation: 90},
+                    {_id: tiles[2].id, rotation: 270},
+                    {_id: tiles[3].id, rotation: 0},
+                    {_id: tiles[4].id, rotation: 180},
+                    {_id: tiles[5].id, rotation: 0},
+                    {_id: tiles[6].id, rotation: 180},
+                    {_id: tiles[7].id, rotation: 90},
+                    {_id: tiles[8].id, rotation: 90},
+                    {_id: tiles[9].id, rotation: 0},
                 ]).then(() => test_lens_alignment());
             });
         }
