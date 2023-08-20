@@ -36,26 +36,26 @@ game.user.targets.forEach((target) => {
             heal_msg = `${heal_msg}<span><b style="color:maroon;">${target_data.strain.value}</b> strain &#8594; <b style="color:maroon;">${changes['data.details.strain.value']}</b> strain</span><br>`;
         }
 
-        if (apply_healing(target, changes))
-            heal_roll
-                .render()
-                .then((heal_render) =>
-                    msg_as_target(`<span>${target.name} is healed!</span><br>${heal_render}${heal_msg}`)
-                );
+        apply_healing(target, changes).then((error_msg) => {
+            if (error_msg) ui.notifications.error(err_msg);
+            else
+                heal_roll
+                    .render()
+                    .then((heal_render) =>
+                        msg_as_target(`<span>${target.name} is healed!</span><br>${heal_render}${heal_msg}`)
+                    );
+        });
     });
 });
 
-function apply_healing(token, changes) {
+async function apply_healing(token, changes) {
     try {
-        Boneyard.Socketlib_Companion.executeAsGM(
+        return await Boneyard.Socketlib_Companion.executeAsGM(
             ({ scene_id, token_id, changes }) => {
                 const scene = game.scenes.get(scene_id);
                 const token = scene?.tokens.get(token_id);
                 if (scene && token) token.actor.update(changes);
-                else
-                    ui.notifications.error(
-                        scene ? `Failed to fetch token: '${token_id}'` : `Failed to fetch scene: '${scene_id}'`
-                    );
+                else return scene ? `Failed to fetch token: '${token_id}'` : `Failed to fetch scene: '${scene_id}'`;
             },
             {
                 scene_id: canvas.scene.id,
@@ -63,7 +63,6 @@ function apply_healing(token, changes) {
                 changes: changes,
             }
         );
-        return true;
     } catch (e) {
         const err_msg =
             e.name === 'SocketlibNoGMConnectedError'
@@ -71,8 +70,7 @@ function apply_healing(token, changes) {
                 : 'Error: ' + e.message;
         console.error(e);
         console.error(err_msg);
-        ui.notifications.error(err_msg);
-        return false;
+        return err_msg;
     }
 }
 
