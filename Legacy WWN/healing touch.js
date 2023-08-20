@@ -30,7 +30,7 @@ if (game.user.targets.size === 0) {
 
         const target_hook_id = Hooks.once('targetToken', (user, token, targeted) => {
             if (targeted) heal_and_clear_targets([token]);
-            document.body.querySelector('nav#controls li.control-tool[data-tool="select"]').click();
+            document.body.querySelector('nav#controls li.control-tool[data-tool="select"]')?.click();
             Hooks.off('renderSceneControls', controls_hook_id);
         });
 
