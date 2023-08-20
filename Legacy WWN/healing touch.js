@@ -1,89 +1,85 @@
-const brad_actor = game.actors.find(actor => actor.data.name === "Aldin Conger");
-let heal_data = brad_actor.getRollData();
-heal_data.heal_item = brad_actor.data.items.find(i => i.data.type === "skill" && i.data.name === "Heal");
-const heal_roll_string = "2d6 + @heal_item.data.data.ownedLevel + @details.level";
-game.user.targets.forEach(target => {
-    let heal_roll = new Roll(heal_roll_string, heal_data).roll().then(heal_roll => {
-        if (target.actor.data.type === "character") {
-            // handle PC
-            if (target.actor.data.data.details.strain.value < target.actor.data.data.details.strain.max && target.actor.data.data.hp.value < target.actor.data.data.hp.max) {
-                
-                const old_hp = target.actor.data.data.hp.value;
-                const new_hp = old_hp + heal_roll.total > target.actor.data.data.hp.max ? target.actor.data.data.hp.max : old_hp + heal_roll.total;
-                const old_strain = target.actor.data.data.details.strain.value;
-                
-                apply_healing(target.id, new_hp, old_strain+1);
-                
-                heal_roll.render().then(heal_render => {
-                    ChatMessage.create({
-                        user: game.user._id,
-                        speaker: ChatMessage.getSpeaker({token: target.document}),
-                        content: `<span>${target.name} is healed!</span><br>
-                                    ${heal_render}
-                                    <span><b style="color:green;">${old_hp}</b> hp &#8594; <b style="color:green;">${new_hp}</b> hp</span><br>
-                                    <span><b style="color:maroon;">${old_strain}</b> strain &#8594; <b style="color:maroon;">${old_strain+1}</b> strain</span><br>
-                                    `
-                    });   
-                });
-            }
-        } else {
-            // handle NPC, disposition of 1 is friendly
-            if (target.actor.data.data.hp.value < target.actor.data.data.hp.max && target.data.disposition === 1) {
-                const old_hp = target.actor.data.data.hp.value;
-                const new_hp = old_hp + heal_roll.total > target.actor.data.data.hp.max ? target.actor.data.data.hp.max : old_hp + heal_roll.total;
+const FRIENDLY = 1;
+const brad_actor = game.actors.find((actor) => actor.data.name === 'Aldin Conger');
+const heal_data = {
+    ...brad_actor.getRollData(),
+    heal_skill_item: brad_actor.data.items.find((item) => item.data.type === 'skill' && item.data.name === 'Heal'),
+};
+const heal_roll_string = '2d6 + @heal_skill_item.data.data.ownedLevel + @details.level';
 
-                apply_healing(target.id, new_hp);
-                
-                heal_roll.render().then(heal_render => {
-                    ChatMessage.create({
-                        user: game.user._id,
-                        speaker: ChatMessage.getSpeaker({token: target.document}),
-                        content: `<span>${target.name} is healed!</span><br>
-                                    ${heal_render}
-                                    <span><b style="color:green;">${old_hp}</b> hp &#8594; <b style="color:green;">${new_hp}</b> hp</span><br>
-                                    `
-                    });   
-                });
-            }
+game.user.targets.forEach((target) => {
+    const msg_as_target = (message) => send_message(target.document, message);
+    const target_data = {
+        ...target.actor.data.data,
+        type: target.actor.data.type,
+        disposition: target.data.disposition,
+        strain: target.actor.data.data.details.strain,
+    };
+
+    const dont_heal_msg =
+        target_data.disposition !== FRIENDLY
+            ? `Shouldn't heal unfriendly target!`
+            : target_data.hp.value >= target_data.hp.max
+            ? `Target is at full HP!`
+            : target_data.strain && target_data.strain.value >= target_data.strain.max
+            ? `Target is at max system strain!`
+            : null;
+    if (dont_heal_msg) return msg_as_target(dont_heal_msg);
+
+    new Roll(heal_roll_string, heal_data).roll({ async: true }).then((heal_roll) => {
+        const changes = {
+            'data.hp.value': Math.min(target_data.hp.value + heal_roll.total, target_data.hp.max),
+        };
+        let heal_msg = `<span><b style="color:green;">${target_data.hp.value}</b> hp &#8594; <b style="color:green;">${changes['data.hp.value']}</b> hp</span><br>`;
+
+        if (target_data.strain) {
+            changes['data.details.strain.value'] = target_data.strain.value + 1;
+            heal_msg = `${heal_msg}<span><b style="color:maroon;">${target_data.strain.value}</b> strain &#8594; <b style="color:maroon;">${changes['data.details.strain.value']}</b> strain</span><br>`;
         }
+
+        if (apply_healing(target, changes))
+            heal_roll
+                .render()
+                .then((heal_render) =>
+                    msg_as_target(`<span>${target.name} is healed!</span><br>${heal_render}${heal_msg}`)
+                );
     });
 });
 
-function apply_healing(token_id, new_hp, new_strain) {
+function apply_healing(token, changes) {
     try {
-        Boneyard.executeAsGM_wrapper((args)=>{
-            
-            const token = canvas.tokens.documentCollection.get(args.token_id);
-            if (token === undefined) {
-                ui.notifications.error(`No token for id '${args.token_id}'`);
-                return;
+        Boneyard.Socketlib_Companion.executeAsGM(
+            ({ scene_id, token_id, changes }) => {
+                const scene = game.scenes.get(scene_id);
+                const token = scene?.tokens.get(token_id);
+                if (scene && token) token.actor.update(changes);
+                else
+                    ui.notifications.error(
+                        scene ? `Failed to fetch token: '${token_id}'` : `Failed to fetch scene: '${scene_id}'`
+                    );
+            },
+            {
+                scene_id: canvas.scene.id,
+                token_id: token.id,
+                changes: changes,
             }
-
-            if (args.new_strain === undefined) {
-                token.actor.update({
-                    "data.hp.value": args.new_hp
-                }); 
-            } else {
-                token.actor.update({
-                    "data.hp.value": args.new_hp,
-                    "data.details.strain.value": args.new_strain
-                });    
-            }
-
-        }, { 
-            token_id: token_id, 
-            new_hp: new_hp, 
-            new_strain: new_strain
-        });
-    } catch(e) {
+        );
+        return true;
+    } catch (e) {
+        const err_msg =
+            e.name === 'SocketlibNoGMConnectedError'
+                ? "Error: Can't run 'Healing Touch' macro, no GM client available."
+                : 'Error: ' + e.message;
         console.error(e);
-        if (e.name === "SocketlibNoGMConnectedError") {
-            console.log("Error: Can't run 'Healing Touch' macro, no GM client available.");
-            ui.notifications.error("Error: Can't run 'Healing Touch' macro, no GM client available.");
-        } else {
-            console.log("Error: " + e.message);
-            ui.notifications.error("Error: " + e.message);
-        }
-        return;
+        console.error(err_msg);
+        ui.notifications.error(err_msg);
+        return false;
     }
+}
+
+function send_message(token_doc, msg_content) {
+    ChatMessage.create({
+        user: game.user.id,
+        speaker: ChatMessage.getSpeaker({ token: token_doc }),
+        content: msg_content,
+    });
 }
