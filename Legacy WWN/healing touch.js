@@ -29,13 +29,12 @@ if (game.user.targets.size === 0) {
         target_control.click();
 
         const target_hook_id = Hooks.once('targetToken', (user, token, targeted) => {
-            console.log('targetToken');
             if (targeted) heal_and_clear_targets([token]);
+            document.body.querySelector('nav#controls li.control-tool[data-tool="select"]').click();
             Hooks.off('renderSceneControls', controls_hook_id);
         });
 
         const controls_hook_id = Hooks.on('renderSceneControls', (scene_controls, html, options) => {
-            console.log('renderSceneControls');
             if (scene_controls.activeControl !== 'token' || scene_controls.activeTool !== 'target') {
                 Hooks.off('targetToken', target_hook_id);
                 Hooks.off('renderSceneControls', controls_hook_id);
