@@ -27,6 +27,7 @@ if (game.user.targets.size === 0) {
     if (token_controls && target_control) {
         token_controls.click();
         target_control.click();
+        ui.notifications.warn("No target selected. Please choost a target to heal.");
 
         const target_hook_id = Hooks.once('targetToken', (user, token, targeted) => {
             if (targeted) heal_and_clear_targets([token]);

@@ -1,16 +1,8 @@
-const party_actor = game.actors.get("UjwAEFk2K9bC9nJu"); // Party actor id
-let pc_actor_names = [
-    "Rosaria Synn",
-    "Kazem Sahaba",
-    "Aldin Conger",
-    "Shelley",
-    "Siwa Chekov"
-];
+const party_actor = game.actors.get('UjwAEFk2K9bC9nJu'); // Party actor id
+const pc_actor_names = ['Rosaria Synn', 'Kazem Sahaba', 'Aldin Conger', 'Shelley', 'Siwa Chekov'];
 
-let button_hit = false;
-
-let custom_dialog = new Dialog({
-    title:`Apply XP and Renown`,
+new Dialog({
+    title: `Apply XP and Renown`,
     content: `
         <form>
             <div class="form-group" style="flex-direction: row;">
@@ -24,84 +16,100 @@ let custom_dialog = new Dialog({
             <hr>
         </form>
     `,
+
     buttons: {
         add: {
             label: `Add`,
-            callback: () => {
-                button_hit = true;
-            }
+            callback: (html) => {
+                const xp = Math.max(parseInt(html[0].querySelector('input#experience')?.value ?? 0), 0);
+                const renown = Math.max(parseInt(html[0].querySelector('input#renown')?.value ?? 0), 0);
+                apply_xp_and_renown(xp, renown).then((not_found) => {
+                    if (not_found) {
+                        ChatMessage.create({
+                            user: game.user._id,
+                            speaker: ChatMessage.getSpeaker({ actor: party_actor }),
+                            content: `
+                                <span>Players gain XP and Renown ${get_date()?.str ?? ''}</span><br>
+                                <span>Each PC receives: <b>${xp} XP and ${renown} Renown</b></span><br>
+                                ${not_found.reduce((acc, val) => {
+                                    return acc + `<span>Couldn't find actor with ID '${val}'</span><br>`;
+                                }, '')}
+                                `,
+                        });
+                    }
+                });
+            },
         },
     },
-    
-    default: "add",
-    
-    render: (html) => {}, // Do html value updating and hooking here
-    
-    close: async (html) => {
-        if (button_hit !== true) return;
-    
-        let exp = parseFloat($("#experience").val());
-        let renown = parseFloat($("#renown").val());
-        exp = exp < 0 ? 0 : exp;
-        renown = renown < 0 ? 0 : renown;
 
-        try {
-            await Boneyard.executeAsGM_wrapper((args)=>{
-                
-                let actors = [];
-                args.names.forEach(name => {
-                    let actor = game.actors.find(actor => actor.data.name === name);
-                    if (actor === undefined) {
-                        const e = new Error(`Name '${name}' does not correspond to an actor.`);
-                        e.name = "UndefinedActor";
-                        throw e;
-                    } 
-                    actors.push(actor);
-                });
-                
-                actors.forEach(actor => {
-                    actor.update({
-                        "data.details.xp.value": actor.data.data.details.xp.value + args.exp,
-                        "data.details.renown.value": actor.data.data.details.renown.value + args.renown
-                    });
-                });
-                
-            }, { 
-                names: pc_actor_names, 
-                exp: exp, 
-                renown: renown 
-            });
-        } catch(e) {
-            console.error(e);
-            if (e.name === "SocketlibNoGMConnectedError") {
-                console.log("Error: Can't run 'Apply XP and Renown' macro, no GM client available.");
-                ui.notifications.error("Error: Can't run 'Apply XP and Renown' macro, no GM client available.");
-            } else {
-                console.log("Error: " + e.message);
-                ui.notifications.error("Error: " + e.message);
+    default: 'add',
+}).render((force = true), (options = { width: 350 }));
+
+// --------- helper functions --------
+
+// xp and renown must be numbers >= 0
+async function apply_xp_and_renown(xp, renown) {
+    const actor_changes = {};
+    pc_actor_names.forEach((name) => {
+        const actor = game.actors.find((actor) => actor.name === name);
+        if (actor)
+            actor_changes[actor.id] = {
+                'data.details.xp.value': actor.data.data.details.xp.value + xp,
+                'data.details.renown.value': actor.data.data.details.renown.value + renown,
+            };
+    });
+
+    try {
+        return await Boneyard.Socketlib_Companion.executeAsGM(
+            (args) => {
+                const not_found = [];
+                for (const actor_id in args.actor_changes) {
+                    const actor = game.actors.get(actor_id);
+                    if (actor) actor.update(args.actor_changes[actor_id]);
+                    else not_found.push(actor_id);
+                }
+                return not_found;
+            },
+            {
+                actor_changes: actor_changes,
             }
-            return;
-        }
-        
-        let current_day = SimpleCalendar.api.getCurrentDay().numericRepresentation;
-        current_day = current_day == 1 ? ""+current_day+"st"
-                    : current_day == 2 ? ""+current_day+"nd"
-                    : current_day == 3 ? ""+current_day+"rd"
-                    : ""+current_day+"th";
-        let current_month = SimpleCalendar.api.getCurrentMonth().name;
-        let current_year = SimpleCalendar.api.getCurrentYear().numericRepresentation;
-        
-        let chat_output_html = `
-            <span>Players gain XP and Renown ${current_day} of ${current_month}, ${current_year}</span><br>
-            <span>Each PC receives: <b>${exp} XP and ${renown} Renown</b></span><br>
-        `;
-        
-        ChatMessage.create({
-            user: game.user._id,
-            speaker: ChatMessage.getSpeaker({actor: party_actor}),
-            content: chat_output_html
-        });
-    },
-});
+        );
+    } catch (e) {
+        const err_msg =
+            e.name === 'SocketlibNoGMConnectedError'
+                ? "Error: Can't run 'Apply XP and Renown' macro, no GM client available."
+                : 'Error: ' + e.message;
+        console.error(e);
+        console.error(err_msg);
+        return null;
+    }
+}
 
-custom_dialog.render(force = true, options = {width: 450});
+function get_date() {
+    const day = SimpleCalendar?.api.getCurrentDay();
+    const month = SimpleCalendar?.api.getCurrentMonth();
+    const year = SimpleCalendar?.api.getCurrentYear();
+    if (day && month && year) {
+        const date = {
+            day: {
+                label: `${day.numericRepresentation}${
+                    day.numericRepresentation === 1
+                        ? 'st'
+                        : day.numericRepresentation === 2
+                        ? '2nd'
+                        : day.numericRepresentation === 3
+                        ? 'rd'
+                        : 'th'
+                }`,
+                value: day.numericRepresentation,
+            },
+            month: {
+                label: month.name,
+                value: month.numericRepresentation,
+            },
+            year: year.numericRepresentation,
+        };
+        date.str = `${date.day.label} of ${date.month.label}, ${date.year}`;
+        return date;
+    } else return null;
+}
