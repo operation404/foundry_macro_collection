@@ -27,7 +27,7 @@ if (game.user.targets.size === 0) {
     if (token_controls && target_control) {
         token_controls.click();
         target_control.click();
-        ui.notifications.warn("No target selected. Please choost a target to heal.");
+        ui.notifications.warn('No target selected. Please choost a target to heal.');
 
         const target_hook_id = Hooks.once('targetToken', (user, token, targeted) => {
             if (targeted) heal_and_clear_targets([token]);
@@ -96,8 +96,10 @@ async function apply_healing(token, changes) {
             ({ scene_id, token_id, changes }) => {
                 const scene = game.scenes.get(scene_id);
                 const token = scene?.tokens.get(token_id);
-                if (scene && token) token.actor.update(changes);
-                else return scene ? `Failed to fetch token: '${token_id}'` : `Failed to fetch scene: '${scene_id}'`;
+                if (scene && token) {
+                    token.actor.update(changes);
+                    return null;
+                } else return scene ? `Failed to fetch token: '${token_id}'` : `Failed to fetch scene: '${scene_id}'`;
             },
             {
                 scene_id: canvas.scene.id,
