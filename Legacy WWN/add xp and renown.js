@@ -108,6 +108,7 @@ function get_date() {
                 value: month.numericRepresentation,
             },
             year: year.numericRepresentation,
+            str: undefined,
         };
         date.str = `${date.day.label} of ${date.month.label}, ${date.year}`;
         return date;
