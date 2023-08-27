@@ -149,11 +149,11 @@ async function expend_supplies(supplies_used) {
         if (supplies[supply_type]) {
             const label = supply_type.charAt(0).toUpperCase() + supply_type.slice(1);
             const new_total = supplies[supply_type].total - supplies_used[supply_type];
+            const days_left = Math.floor(new_total / supplies[supply_type].daily);
             changes[supply_type] = Math.max(0, new_total);
             updates_str = `${updates_str}
                 ${new_total < 0 ? `<span>!!! Short ${-new_total} ${supply_type} !!!</span><br>` : ''}
-                <span>${label}: ${supplies[supply_type].total} &#8594; 
-                ${new_total < 0 ? `<b style="color:#FF0000;">0</b>` : new_total}
+                <span>${label}: ${days_left < 0 ? `<b style="color:#FF0000;">0</b>` : days_left} days left
                 </span><br>`;
         }
     }
