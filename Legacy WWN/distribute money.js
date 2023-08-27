@@ -89,8 +89,7 @@ function calculate_player_money(method, party_fund_ratio, coins) {
             })
     );
     // Log these for safety
-    console.log('party', JSON.stringify(party_changes));
-    console.log('players', JSON.stringify(changes));
+    console.log('party', JSON.stringify(party_changes), 'players', JSON.stringify(changes));
 
     Object.entries(coins).forEach(
         method === 'shares'
