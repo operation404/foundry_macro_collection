@@ -52,7 +52,7 @@ supplies.water.left = Math.floor(supplies.water.total / supplies.water.daily);
 supplies.hot_water.daily = supplies.water.daily * HOT_CLIMATE_WATER_MULT;
 supplies.hot_water.left = Math.floor(supplies.water.total / supplies.hot_water.daily);
 
-let custom_dialog = new Dialog({
+new Dialog({
     title: `Expend Daily Food/Water`,
 
     content: `
@@ -137,9 +137,7 @@ let custom_dialog = new Dialog({
             })
         );
     },
-});
-
-custom_dialog.render((force = true), (options = { width: 550 }));
+}).render((force = true), (options = { width: 550 }));
 
 // --------- helper functions --------
 
@@ -148,7 +146,7 @@ async function expend_supplies(supplies_used) {
     const changes = {};
 
     for (const supply_type in supplies_used) {
-        if (supplies_used[supply_type]) {
+        if (supplies[supply_type]) {
             const label = supply_type.charAt(0).toUpperCase() + supply_type.slice(1);
             const new_total = supplies[supply_type].total - supplies_used[supply_type];
             changes[supply_type] = Math.max(0, new_total);
@@ -182,7 +180,7 @@ async function expend_supplies(supplies_used) {
     ChatMessage.create({
         user: game.user.id,
         speaker: ChatMessage.getSpeaker({ actor: party_actor }),
-        content: `<span>${old_date.str} &#8594; ${new_date.str}}</span><br>${updates_str}`,
+        content: `<span>${old_date.str} &#8594; ${new_date.str}</span><br>${updates_str}`,
     });
 }
 
