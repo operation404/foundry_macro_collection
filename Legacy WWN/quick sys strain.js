@@ -1,12 +1,8 @@
-let actors;
 if (canvas.tokens.controlled.length > 0) {
-    actors = canvas.tokens.controlled.map((t) => t.actor);
+    canvas.tokens.controlled.map((t) => t.actor).forEach((actor) => add_1_sys_strain(actor));
 } else if (game.user.character) {
-    actors = [game.user.character];
+    add_1_sys_strain(game.user.character);
 }
-actors ??= [];
-
-actors.forEach((actor) => add_1_sys_strain(actor));
 
 async function add_1_sys_strain(actor) {
     const strain = actor.data.data.details.strain;
