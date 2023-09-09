@@ -5,25 +5,24 @@ if (canvas.tokens.controlled.length > 0) {
 }
 
 async function add_1_sys_strain(actor) {
-    const strain = actor.data.data.details.strain;
-    if (strain) {
-        let msg;
-        if (strain.value === strain.max) {
-            // maxed out already
-            msg = `<span>${actor.name} already at <b style="color:#FF0000;">max system strain!</b></span>`;
-        } else {
-            const old_strain = strain.value;
-            await actor.update({
-                'data.details.strain.value': strain.value + 1,
+    if (actor.data.data.details.strain) {
+        const old_strain = actor.data.data.details.strain.value;
+        const new_strain = old_strain + 1;
+        if (new_strain <= actor.data.data.details.strain.max) {
+            actor.update({
+                'data.details.strain.value': new_strain,
             });
-            msg = `<span>${actor.name} system strain: ${old_strain} &#8594; ${
-                strain.value === strain.max ? `<b style="color:#FF0000;">${strain.value}</b>` : strain.value
-            }</span>`;
         }
+        const strain_update_msg =
+            old_strain === actor.data.data.details.strain.max
+                ? `<b style="color:#FF0000;">already at max!</b>`
+                : new_strain === actor.data.data.details.strain.max
+                ? `${old_strain} &#8594; <b style="color:#FF0000;">${new_strain}</b>`
+                : `${old_strain} &#8594; ${new_strain}`;
         ChatMessage.create({
             user: game.user.id,
             speaker: ChatMessage.getSpeaker({ actor: actor }),
-            content: msg,
+            content: `<span>${actor.name} system strain: ${strain_update_msg}</span>`,
         });
     }
 }
