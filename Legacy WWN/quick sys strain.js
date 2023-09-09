@@ -8,17 +8,18 @@ async function add_1_sys_strain(actor) {
     if (actor.data.data.details.strain) {
         const old_strain = actor.data.data.details.strain.value;
         const new_strain = old_strain + 1;
-        if (new_strain <= actor.data.data.details.strain.max) {
+        const max_strain = actor.data.data.details.strain.max;
+        if (new_strain <= max_strain) {
             actor.update({
                 'data.details.strain.value': new_strain,
             });
         }
         const strain_update_msg =
-            old_strain === actor.data.data.details.strain.max
+            old_strain === max_strain
                 ? `<b style="color:#FF0000;">already at max!</b>`
-                : new_strain === actor.data.data.details.strain.max
-                ? `${old_strain} &#8594; <b style="color:#FF0000;">${new_strain}</b>`
-                : `${old_strain} &#8594; ${new_strain}`;
+                : `${old_strain} &#8594; ${
+                      new_strain === max_strain ? `<b style="color:#FF0000;">${new_strain}</b>` : new_strain
+                  } (max ${max_strain})`;
         ChatMessage.create({
             user: game.user.id,
             speaker: ChatMessage.getSpeaker({ actor: actor }),
