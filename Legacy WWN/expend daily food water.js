@@ -36,7 +36,7 @@ const supplies = {
     water: {
         total: data.water.quantity,
         daily:
-            data.party.party_size?.value +
+            data.party.party_size.value +
             data.party.small_pack_animals.value * SMALL_ANIMAL_WATER +
             data.party.small_pack_animals.value * LARGE_ANIMAL_WATER,
         left: undefined,
@@ -159,9 +159,20 @@ async function expend_supplies(supplies_used) {
     }
 
     const old_date = get_date();
+    let dateChangeData = null;
+    console.log(supplies_used);
     try {
-        await Boneyard.Socketlib_Companion.executeAsGM(
-            (args) => SimpleCalendar.api.changeDate({ day: args.days_to_advance }),
+        dateChanged = await Boneyard.Socketlib_Companion.executeAsGM(
+            (args) => {
+                let success = SimpleCalendar.api.changeDate({ day: args.days_to_advance });
+                if (success) {
+                    return {
+                        day: SimpleCalendar.api.getCurrentDay(),
+                        month: SimpleCalendar.api.getCurrentMonth(),
+                        year: SimpleCalendar.api.getCurrentYear(),
+                    };
+                } else return null;
+            },
             { days_to_advance: supplies_used.days }
         );
     } catch (e) {
@@ -174,7 +185,8 @@ async function expend_supplies(supplies_used) {
         ui.notifications.error(err_msg);
         return;
     }
-    const new_date = get_date();
+    console.log(dateChanged);
+    const new_date = get_date(dateChanged?.day, dateChanged?.month, dateChanged?.year);
     for (const supply_type in changes) items[supply_type].update({ 'data.quantity': changes[supply_type] });
 
     ChatMessage.create({
@@ -194,10 +206,10 @@ function calculate_needed_supplies(html, ration_mult, feed_mult, water_mult) {
     };
 }
 
-function get_date() {
-    const day = SimpleCalendar?.api.getCurrentDay();
-    const month = SimpleCalendar?.api.getCurrentMonth();
-    const year = SimpleCalendar?.api.getCurrentYear();
+function get_date(day, month, year) {
+    day ??= SimpleCalendar?.api.getCurrentDay();
+    month ??= SimpleCalendar?.api.getCurrentMonth();
+    year ??= SimpleCalendar?.api.getCurrentYear();
     if (day && month && year) {
         const date = {
             day: {
@@ -205,7 +217,7 @@ function get_date() {
                     day.numericRepresentation === 1
                         ? 'st'
                         : day.numericRepresentation === 2
-                        ? '2nd'
+                        ? 'nd'
                         : day.numericRepresentation === 3
                         ? 'rd'
                         : 'th'

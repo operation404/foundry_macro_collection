@@ -1,26 +1,5 @@
-let pc_name_string;
-switch(game.user.name) {
-    case "Caelan GM":
-    case "Caelan":
-        pc_name_string = "Rosaria Synn";
-        break;
-    case "Mason":
-        pc_name_string = "Kazem Sahaba";
-        break;
-    case "Brad":
-        pc_name_string = "Aldin Conger";
-        break;
-    case "Nick":
-        pc_name_string = "Shelley";
-        break;
-    case "Amanda":
-        pc_name_string = "Siwa Chekov";
-        break;
-    default:
-        return;
-}
-const pc_actor = game.actors.find(actor => actor.data.name === pc_name_string);
-console.log(game.user.name, '\n', pc_name_string, pc_actor);
+const pc_actor = game.user.character;
+if (!pc_actor) return;
 
 // Restore hp, don't go over max
 const pc_hp = pc_actor.data.data.hp;
