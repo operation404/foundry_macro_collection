@@ -1,5 +1,9 @@
 const party_actor = game.actors.get('UjwAEFk2K9bC9nJu'); // Party actor id
-const pc_actor_names = ['Rosaria Synn', 'Kazem Sahaba', 'Aldin Conger', 'Shelley', 'Siwa Chekov'];
+
+const actors = game.users.reduce((actors, user) => {
+    if (!user.isGM && game.user.character) actors.push(game.user.character);
+    return actors;
+}, []);
 
 new Dialog({
     title: `Apply XP and Renown`,
@@ -50,13 +54,11 @@ new Dialog({
 // xp and renown must be numbers >= 0
 async function apply_xp_and_renown(xp, renown) {
     const actor_changes = {};
-    pc_actor_names.forEach((name) => {
-        const actor = game.actors.find((actor) => actor.name === name);
-        if (actor)
-            actor_changes[actor.id] = {
-                'data.details.xp.value': actor.data.data.details.xp.value + xp,
-                'data.details.renown.value': actor.data.data.details.renown.value + renown,
-            };
+    actors.forEach((actor) => {
+        actor_changes[actor.id] = {
+            'data.details.xp.value': actor.data.data.details.xp.value + xp,
+            'data.details.renown.value': actor.data.data.details.renown.value + renown,
+        };
     });
 
     try {
@@ -108,7 +110,6 @@ function get_date() {
                 value: month.numericRepresentation,
             },
             year: year.numericRepresentation,
-            str: undefined,
         };
         date.str = `${date.day.label} of ${date.month.label}, ${date.year}`;
         return date;
